@@ -1,0 +1,80 @@
+word_entries:
+	text_plain
+	strongs
+	gematria
+	text_slug
+	total_weight
+
+weights:
+	word_id
+	gematria
+	weight
+
+interlinear:
+	word_id
+	verse_id
+	word_ordinal
+	book
+	chapter
+	verse
+	text_original
+	text_plain
+	text_english
+	text_slug
+	pronounce_sbl
+	pronounce_dic
+	pronounce_dic_mod
+	pronounce_ipa
+	pronounce_ipa_mod
+	parashah
+	parashah_head
+	connected
+	verticalbar
+	eth
+	ho
+	is_first
+	is_last
+	is_chapter_head
+	is_chapter_tail
+	is_book_head
+	is_book_tail
+	is_compound
+	compound_length
+	language
+	strongs
+	morph
+	gematria
+	gematria_gadol
+
+verses:
+	edition
+	verse_id
+	ref
+	osis_id
+	language
+	book
+	chapter
+	verse
+	text
+
+verse_interlinear:
+	verse_id
+	text_original
+	text_english
+	num_words
+	has_parashah
+	is_first
+	is_last
+	gematria
+	gematria_gadol
+	gematria_iota
+
+strongs:
+	strongs_id
+	word
+	translit
+	pronounce
+	derivation
+	strongs_def
+	kjv_def
+	language
