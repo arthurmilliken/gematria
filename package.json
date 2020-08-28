@@ -1,0 +1,28 @@
+{
+  "name": "gematria",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arthurmilliken/gematria.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/arthurmilliken/gematria/issues"
+  },
+  "homepage": "https://github.com/arthurmilliken/gematria#readme",
+  "dependencies": {
+    "aws-sdk": "^2.496.0",
+    "bluebird": "^3.5.5",
+    "dotenv": "^8.0.0",
+    "gun": "^0.2019.712",
+    "sqlite3": "^4.0.9",
+    "uuid": "^3.3.2"
+  }
+}

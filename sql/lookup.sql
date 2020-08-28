@@ -14,7 +14,7 @@ select
 from interlinear i
 left join verses v on i.verse_id = v.verse_id and v.edition='kjv'
 left join weights w on i.word_id = w.word_id
-where text_slug = 'KL-BShR'
+where text_slug = 'ThUMOS' --or text_slug = 'ODVTh|' --or text_slug = 'VOL'
 order by weight desc, i.word_id
 ;
 
@@ -31,6 +31,6 @@ select
 	s.derivation
 from word_entries e
 left join strongs s on e.strongs = s.strongs_id
-where gematria = 552
+where gematria = 719
 order by total_weight desc
 ;
