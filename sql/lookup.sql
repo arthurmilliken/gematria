@@ -12,9 +12,9 @@ select
 	v.text,
 	v.verse_id
 from interlinear i
-left join verses v on i.verse_id = v.verse_id and v.edition='kjv'
+left join verses v on i.verse_id = v.verse_id and v.edition='KJV'
 left join weights w on i.word_id = w.word_id
-where text_slug = 'ThUMOS' --or text_slug = 'ODVTh|' --or text_slug = 'VOL'
+where text_slug = 'ShTITh' --or text_slug = 'ODVTh|' --or text_slug = 'VOL'
 order by weight desc, i.word_id
 ;
 

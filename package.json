@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node .",
+    "start": "node -r esm .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,11 +18,9 @@
   },
   "homepage": "https://github.com/arthurmilliken/gematria#readme",
   "dependencies": {
-    "aws-sdk": "^2.496.0",
-    "bluebird": "^3.5.5",
-    "dotenv": "^8.0.0",
-    "gun": "^0.2019.712",
-    "sqlite3": "^4.0.9",
-    "uuid": "^3.3.2"
+    "csv-parse": "^4.15.3",
+    "esm": "^3.2.25",
+    "sqlite": "^4.0.19",
+    "sqlite3": "^5.0.2"
   }
 }

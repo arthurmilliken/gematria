@@ -1,101 +1,141 @@
-// require('dotenv').config();
-const Promise = require('bluebird');
-const sqlite3 = require('sqlite3').verbose();
-const Gun = require('gun');
+import assert from 'assert';
+import fs from 'fs';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
+import parse from 'csv-parse';
 
-const mode = 'sql';
+const dbPath = '/mnt/d/data/gematria.db';
+const source = '/mnt/d/data/scripture/bibles.txt';
 
-const start = Date.now();
-const dbPath = 'data/gematria.db';
-const db = new sqlite3.Database(dbPath);
-Promise.promisifyAll(db);
-
-const gun = Gun({
-	axe: false,
-	peers: [
-		'https://masterpattern.herokuapp.com/gun',
-	],
-});
-// const gun = Gun();
-
-const gdb = gun.get('gun.biblecurious.org');
-
-// const table = gdb.get('books');
-// const sql = "select * from books limit ? offset ?";
-// const pkey = null;
-
-const table = gdb.get('editions').get('kjv').get('verses');
-const sql = "select * from verses where edition = 'kjv' limit ? offset ?";
-const pkey = 'verse_id';
-
-const putBatch = (sql, params, pkey) => {
-	if (!params) params = [];
-	if (!pkey) pkey = 'id';
-	return new Promise((resolve, reject) => {
-		let rows = 0;
-		let acks = 0;
-		db.each(
-			sql,
-			params,
-			(err, row) => {
-				if (err) throw err;
-				const key = row[pkey];
-				// console.log(key, row);
-				table.get(key).put(row, ack => {
-					if (ack.ok) {
-						acks++;
-						console.log(`ok: (${acks}/${rows}): ${(Date.now() - start)/1000} s`);
-						if (rows > 0 && acks >= rows) resolve(acks);
-					} else {
-						if (ack.err) reject(ack.err);
-						reject(ack);
-					}
-				});
-			},
-			(err, count) => {
-				if (err) return reject(err);
-				console.log('----------------------');
-				console.log(' db:done:', count);
-				if (count === 0) return resolve(0);
-				rows = count;
-			}
-		);
-	});
+const editions = {
+  'King James Bible': 'KJB',
+  'American Standard Version': 'ASV',
+  'Douay-Rheims Bible': 'DRB',
+  'Darby Bible Translation': 'DBT',
+  'English Revised Version': 'ERV',
+  'Webster Bible Translation': 'WBT',
+  'World English Bible': 'WEB',
+  "Young's Literal Translation": "YLT",
+  'American King James Version': 'AKJV',
+  'Weymouth New Testament': 'WNT',
 };
 
-//Gun.node.soul(data)
-
-if (mode === 'sql') {
-	(async () => {
-		const limit = 100;
-		let offset = 0;
-		let total = 0;
-		try {
-			count = await putBatch(sql, [limit, offset], pkey);
-			while (count > 0) {
-				total += count;
-				console.log('----------------------');
-				console.log(` batch complete. total loaded: ${total}`);
-				console.log('----------------------');
-				offset += limit;
-				count = await putBatch(sql, [limit, offset], pkey);
-			}
-		} catch (err) {
-			console.log(err);
-		}
-	})();
-} else if (mode === 'gun') {
-	let count = 0;
-	// table.get('66022009').once(console.log);
-	table.once().map().once((data, key) => {
-		count++;
-		console.log('----------------------')
-		console.log(count, key, data);
-	});
-} else {
-	console.log(`unknown mode: ${mode}`);
-	process.exit();
+function pad(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
 
+const main = async () => {
+  const db = await open({
+    filename: dbPath,
+    driver: sqlite3.cached.Database
+  });
 
+  // Create books lookup table
+  const books = {}
+  const q = "SELECT id, name, osis_book FROM books;"
+  const rows = await db.all(q);
+  for (const i in rows) {
+    const row = rows[i];
+    books[row.name] = row;
+  }
 
+  let recordNum = 14412;
+  const parser = parse({
+    bom: true,
+    columns: true,
+    delimiter: '\t',
+    from: recordNum,
+  })
+  .on('error', (err) => {
+    console.error(err);
+    console.error(`AT recordNum: ${recordNum}`);
+    process.exit(1);
+  });
+ 
+  const cursor = fs.createReadStream(source, 'utf8').pipe(parser);
+  for await (const record of cursor) {
+    const ref = record.Verse;
+    const delim = ref.lastIndexOf(' ');
+    let bookName = ref.substr(0,delim);
+    if (bookName == "Psalm") {
+      bookName = "Psalms";
+    }
+    const book = books[bookName];
+    assert(book, `${ref} - recordNum: ${recordNum}`);
+    const chapterVerse = ref.substr(delim).split(':');
+    assert(chapterVerse.length == 2, ref);
+    const chapter = parseInt(chapterVerse[0]);
+    const verse = parseInt(chapterVerse[1]);
+    const verse_id = `${book.id}${pad(chapter, 3)}${pad(verse, 3)}`;
+    const osis_id = `${book.osis_book}.${chapter}.${verse}`;
+
+    for (const key in editions) {
+      const edition = editions[key];
+      assert(edition);
+      const text = record[key];
+      if (text.trim().length == 0) {
+        continue;
+      }
+      const result = await db.run(`
+      INSERT INTO verses (
+        edition, 
+        verse_id, 
+        ref, 
+        osis_id, 
+        language, 
+        book, 
+        chapter, 
+        verse, 
+        text)
+      VALUES (
+        :edition,
+        :verse_id,
+        :ref,
+        :osis_id,
+        'en',
+        :book,
+        :chapter,
+        :verse,
+        :text);
+      `, {
+        ':edition': edition,
+        ':verse_id': verse_id,
+        ':ref': ref,
+        ':osis_id': osis_id,
+        ':book': book.id,
+        ':chapter': chapter,
+        ':verse': verse,
+        ':text': text,
+      });
+      assert(result.changes > 0, `${ref} - ${key}`);
+    }
+    recordNum++;
+    if (recordNum % 1000 == 0) {
+      console.log(`recordNum: ${recordNum}`);
+    }
+  }
+};
+
+const populateEditions = async () => {
+  const db = await open({
+    filename: dbPath,
+    driver: sqlite3.cached.Database
+  });
+
+  const stmt = await db.prepare(
+    "select id, title from editions where id = ?;"
+  );
+  
+  for (const title in editions) {
+    const id = editions[title];
+    const result = await stmt.get(id);
+    console.log(JSON.stringify(result));
+  }
+  console.log('DONE');
+};
+
+(async () => {
+  await main();
+})();

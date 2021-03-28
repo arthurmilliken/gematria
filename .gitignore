@@ -87,6 +87,7 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 
+# Custom for this project
 data
 radata
 .env
