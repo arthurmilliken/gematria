@@ -3,17 +3,17 @@ import fs from 'fs';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
-const dbPath = '/mnt/d/data/gematria.db';
+import config from './config';
 
-const main = async () => {
+async function main() {
   const db = await open({
-    filename: dbPath,
-    driver: sqlite3.cached.Database
+    filename: config.dbPath,
+    driver: sqlite3.Database
   });
-
-  console.log('db test passed.');
-};
+  console.log('db connected.');
+}
 
 (async () => {
   await main();
+  console.log('done.');
 })();

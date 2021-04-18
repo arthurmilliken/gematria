@@ -4,7 +4,8 @@ import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import parse from 'csv-parse';
 
-const dbPath = '/mnt/d/data/gematria.db';
+import config from '../config';
+
 const source = '/mnt/d/data/scripture/bibles.txt';
 
 const editions = {
@@ -26,15 +27,15 @@ function pad(n, width, z) {
   return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
 
-const main = async () => {
+async function populateVerses() {
   const db = await open({
-    filename: dbPath,
-    driver: sqlite3.cached.Database
+    filename: config.dbPath,
+    driver: sqlite3.Database
   });
 
   // Create books lookup table
-  const books = {}
-  const q = "SELECT id, name, osis_book FROM books;"
+  const books = {};
+  const q = "SELECT id, name, osis_book FROM books;";
   const rows = await db.all(q);
   for (const i in rows) {
     const row = rows[i];
@@ -48,17 +49,17 @@ const main = async () => {
     delimiter: '\t',
     from: recordNum,
   })
-  .on('error', (err) => {
-    console.error(err);
-    console.error(`AT recordNum: ${recordNum}`);
-    process.exit(1);
-  });
- 
+    .on('error', (err) => {
+      console.error(err);
+      console.error(`AT recordNum: ${recordNum}`);
+      process.exit(1);
+    });
+
   const cursor = fs.createReadStream(source, 'utf8').pipe(parser);
   for await (const record of cursor) {
     const ref = record.Verse;
     const delim = ref.lastIndexOf(' ');
-    let bookName = ref.substr(0,delim);
+    let bookName = ref.substr(0, delim);
     if (bookName == "Psalm") {
       bookName = "Psalms";
     }
@@ -116,9 +117,11 @@ const main = async () => {
       console.log(`recordNum: ${recordNum}`);
     }
   }
-};
+  db.close();
+  console.log('DONE.');
+}
 
-const populateEditions = async () => {
+async function populateEditions() {
   const db = await open({
     filename: dbPath,
     driver: sqlite3.cached.Database
@@ -127,15 +130,17 @@ const populateEditions = async () => {
   const stmt = await db.prepare(
     "select id, title from editions where id = ?;"
   );
-  
+
   for (const title in editions) {
     const id = editions[title];
     const result = await stmt.get(id);
     console.log(JSON.stringify(result));
   }
+  db.close();
   console.log('DONE');
-};
+}
 
 (async () => {
-  await main();
+  await populateEditions();
+  await populateVerses();
 })();
