@@ -19,8 +19,9 @@
   "homepage": "https://github.com/arthurmilliken/gematria#readme",
   "dependencies": {
     "csv-parse": "^4.15.3",
+    "dotenv": "^10.0.0",
     "esm": "^3.2.25",
-    "sqlite": "^4.0.19",
+    "sqlite": "^4.0.23",
     "sqlite3": "^5.0.2"
   }
 }

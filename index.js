@@ -1,16 +1,19 @@
-import assert from 'assert';
-import fs from 'fs';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
-import config from './config';
+import { DB_PATH } from './config';
 
 async function main() {
+  console.log({ DB_PATH });
   const db = await open({
-    filename: config.dbPath,
+    filename: DB_PATH,
     driver: sqlite3.Database
   });
   console.log('db connected.');
+  const books = {};
+  const q = "SELECT * FROM books;";
+  const rows = await db.all(q);
+  console.log(JSON.stringify({ books: rows }, null, 2));
 }
 
 (async () => {
